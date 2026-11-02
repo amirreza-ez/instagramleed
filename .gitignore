@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-desktop
+release
+.data
+backups
+*.log
+.env
+apps/api/uploads
+test-results
+playwright-report
+.db.log
+.api.log

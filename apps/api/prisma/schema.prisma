@@ -1,0 +1,437 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  AGENT
+  VIEWER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadSource {
+  MANUAL
+  CSV
+  XLSX
+  META_LEAD_ADS
+  INSTAGRAM_COMMENT
+  INSTAGRAM_DM
+  INSTAGRAM_MENTION
+  BUSINESS_DISCOVERY
+  WEBHOOK
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum CampaignChannel {
+  INSTAGRAM_ADS
+  INSTAGRAM_ORGANIC
+  LEAD_ADS
+  WHATSAPP
+  SMS
+  OFFLINE
+  OTHER
+}
+
+enum JobType {
+  IMPORT
+  DISCOVERY
+  SYNC
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum IntegrationProvider {
+  INSTAGRAM
+  FACEBOOK
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  EXPIRED
+  ERROR
+  DISCONNECTED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  VOID
+}
+
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  businessType  String?
+  phone         String?
+  city          String?
+  website       String?
+  instagram     String?
+  webhookKey    String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  suspended     Boolean  @default(false)
+
+  members       Membership[]
+  categories    Category[]
+  leads         Lead[]
+  campaigns     Campaign[]
+  tasks         Task[]
+  jobs          Job[]
+  integrations  Integration[]
+  segments      Segment[]
+  subscription  Subscription?
+  invoices      Invoice[]
+  activities    Activity[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  isSuperAdmin Boolean  @default(false)
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  memberships  Membership[]
+  refreshTokens RefreshToken[]
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role         @default(AGENT)
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+model RefreshToken {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String
+  family         String
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([family])
+}
+
+model Category {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  color          String       @default("#1e3a8a")
+  sortOrder      Int          @default(0)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leads          Lead[]
+
+  @@unique([organizationId, name])
+}
+
+model Lead {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  fullName           String?
+  businessName       String?
+  instagramUsername  String?
+  phone              String?
+  email              String?
+  city               String?
+  website            String?
+  bio                String?
+  followersCount     Int?
+  categoryId         String?
+  source             LeadSource   @default(MANUAL)
+  status             LeadStatus   @default(NEW)
+  priority           Priority     @default(MEDIUM)
+  score              Int          @default(0)
+  campaignId         String?
+  assigneeId         String?
+  notes              String?
+  tags               String[]     @default([])
+  consent            Boolean      @default(false)
+  consentSource      String?
+  externalId         String?
+  customFields       Json?
+  normPhone          String?
+  normUsername       String?
+  normEmail          String?
+  isDuplicate        Boolean      @default(false)
+  duplicateOfId      String?
+  convertedAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category           Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  campaign           Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  activities         Activity[]
+  tasks              Task[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, status])
+  @@index([organizationId, normPhone])
+  @@index([organizationId, normUsername])
+  @@index([organizationId, normEmail])
+  @@index([organizationId, externalId])
+}
+
+model Activity {
+  id             String       @id @default(cuid())
+  organizationId String
+  leadId         String?
+  userId         String?
+  type           String
+  content        String
+  meta           Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead           Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([leadId])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  organizationId String
+  leadId         String?
+  assigneeId     String?
+  createdById    String?
+  title          String
+  description    String?
+  dueAt          DateTime?
+  priority       Priority     @default(MEDIUM)
+  status         TaskStatus   @default(OPEN)
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead           Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status, dueAt])
+}
+
+model Campaign {
+  id             String          @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  channel        CampaignChannel @default(INSTAGRAM_ORGANIC)
+  status         CampaignStatus  @default(DRAFT)
+  budget         BigInt?
+  startDate      DateTime?
+  endDate        DateTime?
+  utmCampaign    String?
+  metaCampaignId String?
+  createdAt      DateTime        @default(now())
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leads          Lead[]
+
+  @@index([organizationId])
+}
+
+model Segment {
+  id             String       @id @default(cuid())
+  organizationId String
+  createdById    String?
+  name           String
+  filters        Json
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id             String       @id @default(cuid())
+  organizationId String
+  createdById    String?
+  type           JobType
+  status         JobStatus    @default(PENDING)
+  title          String
+  fileName       String?
+  total          Int          @default(0)
+  processed      Int          @default(0)
+  created        Int          @default(0)
+  merged         Int          @default(0)
+  duplicates     Int          @default(0)
+  failed         Int          @default(0)
+  options        Json?
+  errors         Json?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+}
+
+model Integration {
+  id              String              @id @default(cuid())
+  organizationId  String
+  provider        IntegrationProvider
+  externalId      String
+  name            String
+  igUserId        String?
+  accessTokenEnc  String
+  tokenExpiresAt  DateTime?
+  scopes          String[]            @default([])
+  status          IntegrationStatus   @default(CONNECTED)
+  lastSyncAt      DateTime?
+  lastError       String?
+  pages           Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, provider, externalId])
+  @@index([externalId])
+}
+
+model IntegrationLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  integrationId  String?
+  level          String   @default("info")
+  event          String
+  message        String
+  payload        Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+model WebhookEvent {
+  id             String    @id @default(cuid())
+  provider       String
+  dedupeKey      String    @unique
+  payload        Json
+  processedAt    DateTime?
+  error          String?
+  createdAt      DateTime  @default(now())
+}
+
+model OAuthState {
+  id             String   @id @default(cuid())
+  state          String   @unique
+  organizationId String
+  userId         String
+  provider       IntegrationProvider
+  expiresAt      DateTime
+}
+
+model Plan {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  priceMonthly      Int
+  maxLeads          Int
+  maxUsers          Int
+  maxIntegrations   Int
+  maxImportsMonthly Int
+  features          String[] @default([])
+  sortOrder         Int      @default(0)
+  active            Boolean  @default(true)
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  organizationId   String             @unique
+  planId           String
+  status           SubscriptionStatus @default(TRIALING)
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+  pendingPlanId    String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan             Plan               @relation(fields: [planId], references: [id])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String
+  number         String        @unique
+  planId         String
+  amount         Int
+  status         InvoiceStatus @default(PENDING)
+  provider       String
+  providerRef    String?
+  periodStart    DateTime
+  periodEnd      DateTime
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String
+  entity         String?
+  entityId       String?
+  ip             String?
+  meta           Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
