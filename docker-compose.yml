@@ -1,0 +1,37 @@
+# docker compose up -d   →  http://localhost:4000
+# Set strong secrets in a .env file next to this file (see .env.example).
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eazazi
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?set PG_PASSWORD}
+      POSTGRES_DB: eazazi
+    volumes: [pgdata:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U eazazi"], interval: 5s, retries: 20 }
+  app:
+    build: { context: ., dockerfile: docker/Dockerfile }
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["4000:4000"]
+    environment:
+      DATABASE_URL: postgresql://eazazi:${PG_PASSWORD}@db:5432/eazazi
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
+      APP_URL: ${APP_URL:-http://localhost:4000}
+      API_URL: ${API_URL:-http://localhost:4000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-app://eazazi}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@eazazi.ir}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v24.0}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID:-}
+      INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET:-}
+      META_WEBHOOK_VERIFY_TOKEN: ${META_WEBHOOK_VERIFY_TOKEN:-}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-manual}
+      ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
+      ZARINPAL_SANDBOX: ${ZARINPAL_SANDBOX:-true}
+volumes:
+  pgdata:

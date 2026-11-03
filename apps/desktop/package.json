@@ -1,0 +1,64 @@
+{
+  "name": "eazazi-lead-desktop",
+  "productName": "EAZAZI LEAD INSTAGRAM",
+  "version": "1.0.0",
+  "description": "EAZAZI LEAD INSTAGRAM - Windows desktop client",
+  "author": "Mobile Eazazi",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node build/make-icon.mjs",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "ir.eazazi.lead",
+    "productName": "EAZAZI LEAD INSTAGRAM",
+    "copyright": "© Mobile Eazazi",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "EAZAZI-LEAD-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EAZAZI LEAD",
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.example.com/eazazi-lead"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "sharp": "^0.35.5"
+  }
+}
