@@ -51,6 +51,7 @@ export type LeadFilters = z.infer<typeof filterSchema>;
 const arr = <T>(v: T | T[] | undefined) => (v === undefined ? undefined : Array.isArray(v) ? v : [v]);
 
 export type DedupeStrategy = 'skip' | 'merge' | 'create';
+const STATUS_FA: Record<string, string> = { NEW: 'جدید', CONTACTED: 'تماس گرفته شد', QUALIFIED: 'واجد شرایط', NEGOTIATION: 'در حال مذاکره', WON: 'مشتری شد', LOST: 'از دست رفت' };
 const PII: (keyof Lead)[] = ['fullName', 'businessName', 'instagramUsername', 'phone', 'email', 'city', 'website', 'bio', 'notes'];
 
 export function scoreLead(l: Partial<Lead>): number {
@@ -214,7 +215,7 @@ export class LeadsService {
     data.score = scoreLead({ ...cur, ...data });
     const lead = await this.prisma.lead.update({ where: { id }, data });
     const acts: Prisma.ActivityCreateManyInput[] = [];
-    if (d.status && d.status !== cur.status) acts.push({ organizationId: ctx.orgId, leadId: id, userId: ctx.userId, type: 'STATUS', content: `وضعیت از ${cur.status} به ${d.status} تغییر کرد`, meta: { from: cur.status, to: d.status } });
+    if (d.status && d.status !== cur.status) acts.push({ organizationId: ctx.orgId, leadId: id, userId: ctx.userId, type: 'STATUS', content: `وضعیت از «${STATUS_FA[cur.status]}» به «${STATUS_FA[d.status]}» تغییر کرد`, meta: { from: cur.status, to: d.status } });
     if (d.assigneeId !== undefined && d.assigneeId !== cur.assigneeId) acts.push({ organizationId: ctx.orgId, leadId: id, userId: ctx.userId, type: 'ASSIGN', content: 'کارشناس مسئول تغییر کرد', meta: { to: d.assigneeId } });
     if (acts.length) await this.prisma.activity.createMany({ data: acts });
     await this.audit.log(ctx, 'lead.update', 'lead', id, { fields: Object.keys(d) });
