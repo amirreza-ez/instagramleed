@@ -211,3 +211,14 @@ describe('integrations and intake', () => {
     expect(s.body.subscription).toMatchObject({ status: 'ACTIVE', plan: { code: 'pro' } });
   });
 });
+
+describe('export safety', () => {
+  it('neutralises CSV formula injection but keeps phone numbers', async () => {
+    const { csvSafe } = await import('../src/modules/imports');
+    expect(csvSafe('=HYPERLINK("http://evil")')).toBe(`'=HYPERLINK("http://evil")`);
+    expect(csvSafe('@SUM(A1)')).toBe(`'@SUM(A1)`);
+    expect(csvSafe('-cmd')).toBe(`'-cmd`);
+    expect(csvSafe('+989121234567')).toBe('+989121234567');
+    expect(csvSafe('علی')).toBe('علی');
+  });
+});

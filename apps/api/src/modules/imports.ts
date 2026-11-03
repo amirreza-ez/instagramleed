@@ -206,7 +206,7 @@ export class ExportService {
       ['یادداشت', (l) => l.notes], ['تاریخ ایجاد', (l) => fa.format(l.createdAt)],
     ];
     if (format === 'csv') {
-      const csv = Papa.unparse({ fields: cols.map((c) => c[0]), data: items.map((l) => cols.map(([, f]) => f(l) ?? '')) });
+      const csv = Papa.unparse({ fields: cols.map((c) => c[0]), data: items.map((l) => cols.map(([, f]) => csvSafe(f(l)))) });
       return { buffer: Buffer.from('﻿' + csv, 'utf8'), count: items.length };
     }
     const wb = new ExcelJS.Workbook();
@@ -292,3 +292,9 @@ export class ImportsController {
 @Module({ imports: [LeadsModule], controllers: [ImportsController], providers: [ImportsService, ExportService, JobRunner], exports: [JobRunner] })
 export class ImportsModule {}
 export type { Prisma };
+
+/** Neutralises spreadsheet formula injection (=, @, tab/CR, and +/- not followed by a digit, e.g. "+98912…" stays intact). */
+export function csvSafe(v: unknown): unknown {
+  if (typeof v !== 'string') return v ?? '';
+  return /^[=@\t\r]/.test(v) || /^[+-](?![\d\s])/.test(v) ? `'${v}` : v;
+}
