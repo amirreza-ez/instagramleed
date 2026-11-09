@@ -23,6 +23,7 @@
       "main.cjs",
       "preload.cjs",
       "renderer/**/*",
+      "build/icon.png",
       "package.json"
     ],
     "win": {
