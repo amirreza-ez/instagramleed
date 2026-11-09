@@ -10,7 +10,8 @@
     "build": "pnpm -C apps/api build && pnpm -C apps/web build",
     "start": "node scripts/dev.mjs --prod",
     "test": "pnpm -C apps/api test && pnpm -C apps/web test",
-    "desktop:dist": "pnpm -C apps/web build:desktop && pnpm -C apps/desktop dist"
+    "desktop:dist": "pnpm -C apps/web build:desktop && pnpm -C apps/desktop dist",
+    "share": "ssh -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -R 80:localhost:4000 nokey@localhost.run"
   },
   "packageManager": "pnpm@10.34.9",
   "pnpm": {

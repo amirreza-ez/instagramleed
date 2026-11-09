@@ -1,0 +1,25 @@
+# Render Blueprint — free web service (API + web on one URL). Database: Neon free PostgreSQL (set DATABASE_URL).
+services:
+  - type: web
+    name: eazazi-lead
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm -C apps/api exec prisma generate && pnpm build
+    startCommand: cd apps/api && pnpm exec prisma migrate deploy && pnpm exec tsx prisma/seed.ts && node dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: EMBEDDED_PG, value: "false" }
+      - { key: NODE_VERSION, value: "24" }
+      - { key: DATABASE_URL, sync: false }
+      - { key: SEED_ADMIN_PASSWORD, sync: false }
+      - { key: APP_URL, sync: false }
+      - { key: API_URL, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: ENCRYPTION_KEY, generateValue: true }
+      - { key: META_WEBHOOK_VERIFY_TOKEN, generateValue: true }
+      - { key: SEED_ADMIN_EMAIL, value: admin@eazazi.ir }
+      - { key: CORS_ORIGINS, value: app://eazazi }
+      - { key: META_GRAPH_VERSION, value: v24.0 }
+      - { key: PAYMENT_PROVIDER, value: manual }
