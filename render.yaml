@@ -6,13 +6,14 @@ services:
     plan: free
     region: frankfurt
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm -C apps/api exec prisma generate && pnpm build
-    startCommand: cd apps/api && pnpm exec prisma migrate deploy && pnpm exec tsx prisma/seed.ts && node dist/main.js
+    startCommand: cd apps/api && DATABASE_URL="${DIRECT_URL:-$DATABASE_URL}" pnpm exec prisma migrate deploy && DATABASE_URL="${DIRECT_URL:-$DATABASE_URL}" pnpm exec tsx prisma/seed.ts && node dist/main.js
     healthCheckPath: /api/health
     envVars:
       - { key: NODE_ENV, value: production }
       - { key: EMBEDDED_PG, value: "false" }
       - { key: NODE_VERSION, value: "24" }
       - { key: DATABASE_URL, sync: false }
+      - { key: DIRECT_URL, sync: false }
       - { key: SEED_ADMIN_PASSWORD, sync: false }
       - { key: APP_URL, sync: false }
       - { key: API_URL, sync: false }
