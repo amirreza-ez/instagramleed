@@ -5,7 +5,7 @@ RUN corepack enable && apt-get update -y && apt-get install -y openssl && rm -rf
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN pnpm install --frozen-lockfile --filter @eazazi/api --filter @eazazi/web
+RUN pnpm install --no-frozen-lockfile --filter @eazazi/api --filter @eazazi/web
 COPY apps/api apps/api
 COPY apps/web apps/web
 RUN pnpm -C apps/api exec prisma generate && pnpm -C apps/api build && pnpm -C apps/web build
