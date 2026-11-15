@@ -11,7 +11,7 @@ import { faDateTime, faNum } from '../lib/fa';
 import { useCampaigns, useCategories } from '../lib/hooks';
 import { JobsTable } from './Imports';
 
-const IG_SOURCES = ['BUSINESS_DISCOVERY', 'INSTAGRAM_COMMENT', 'INSTAGRAM_DM', 'INSTAGRAM_MENTION', 'META_LEAD_ADS'];
+const IG_SOURCES = ['FORM', 'BUSINESS_DISCOVERY', 'INSTAGRAM_COMMENT', 'INSTAGRAM_DM', 'INSTAGRAM_MENTION', 'META_LEAD_ADS'];
 
 /** Legitimate counterpart of the reference app's "Instagram user extraction" screen. */
 export default function Discovery() {
@@ -61,6 +61,8 @@ export default function Discovery() {
         <StatCard label="اکانت‌های متصل" value={faNum(integrations.filter((i) => i.status !== 'DISCONNECTED').length)} icon={<ShieldCheck className="size-5" />} tone="violet" />
         <StatCard label="اکانت‌های فعال" value={faNum(active.length)} icon={<ShieldCheck className="size-5" />} tone="emerald" hint={integrations.some((i) => i.status === 'EXPIRED') ? <span className="text-rose-600">اتصال منقضی وجود دارد</span> : undefined} />
       </div>
+
+      <FormLinkCard />
 
       {!active.length && (
         <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
@@ -129,5 +131,26 @@ export default function Discovery() {
         </ol>
       </Modal>
     </div>
+  );
+}
+
+function FormLinkCard() {
+  const { data: org } = useQuery({ queryKey: ['org'], queryFn: () => api('/org') });
+  if (!org) return null;
+  const link = `${location.origin}/f/${org.slug}`;
+  const variants = [['بیو', 'bio'], ['استوری', 'story'], ['دایرکت', 'dm'], ['ManyChat', 'manychat']];
+  const copy = (u: string) => navigator.clipboard.writeText(u).then(() => toast.success('لینک کپی شد'));
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-l from-pink-600 via-fuchsia-600 to-brand-700 px-5 py-4 text-white">
+        <div><p className="font-bold">لینک فرم جذب مشتری</p><p className="mt-1 text-xs text-white/80">این لینک را در بیو، استوری یا جواب دایرکت بگذارید؛ هر کس فرم را پر کند فوراً سرنخ می‌شود و پیگیری فوری برایتان ثبت می‌شود.</p></div>
+        <div className="flex gap-2"><Button variant="gold" onClick={() => copy(link)}>کپی لینک</Button><Button variant="secondary" onClick={() => window.open(link, '_blank')}>پیش‌نمایش</Button></div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 px-5 py-3 text-xs">
+        <code className="ltr rounded-lg bg-navy-50 px-3 py-1.5">{link}</code>
+        <span className="text-navy-400">لینک جدا برای هر جا (تا بدانید مشتری از کجا آمده):</span>
+        {variants.map(([l, s]) => <button key={s} onClick={() => copy(`${link}?src=${s}`)} className="rounded-full bg-navy-50 px-2.5 py-1 text-navy-600 hover:bg-brand-50 hover:text-brand-700">{l}</button>)}
+      </div>
+    </Card>
   );
 }

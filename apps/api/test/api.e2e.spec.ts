@@ -222,3 +222,22 @@ describe('export safety', () => {
     expect(csvSafe('علی')).toBe('علی');
   });
 });
+
+describe('public lead form', () => {
+  it('serves the form, validates, ignores bots, creates a FORM lead with a follow-up task', async () => {
+    const a = await register('formorg');
+    const org = await request(http).get('/api/org').set(auth(a.token)).expect(200);
+    const f = await request(http).get(`/api/public/forms/${org.body.slug}`).expect(200);
+    expect(f.body.name).toBe('سازمان formorg');
+    expect(f.body.webhookKey).toBeUndefined();
+    await request(http).get('/api/public/forms/nope').expect(404);
+    await request(http).post(`/api/public/forms/${org.body.slug}`).send({ fullName: 'ع', phone: '12', consent: true }).expect(400);
+    await request(http).post(`/api/public/forms/${org.body.slug}`).send({ fullName: 'ربات', phone: '09120000000', consent: true, website: 'x' }).expect(201);
+    await request(http).post(`/api/public/forms/${org.body.slug}`).send({ fullName: 'مشتری فرم', phone: '۰۹۱۲۳۳۳۴۴۵۵', city: 'تهران', message: 'قاب آیفون عمده', src: 'bio', consent: true }).expect(201);
+    const leads = await request(http).get('/api/leads').set(auth(a.token)).expect(200);
+    expect(leads.body.total).toBe(1);
+    expect(leads.body.items[0]).toMatchObject({ fullName: 'مشتری فرم', source: 'FORM', consent: true });
+    const tasks = await request(http).get('/api/tasks/due').set(auth(a.token)).expect(200);
+    expect(tasks.body[0].title).toContain('مشتری فرم');
+  });
+});

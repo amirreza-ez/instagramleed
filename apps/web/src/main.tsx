@@ -22,6 +22,10 @@ const Integrations = lazy(() => import('./pages/Integrations'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Billing = lazy(() => import('./pages/Billing'));
 const Admin = lazy(() => import('./pages/Admin'));
+const PublicForm = lazy(() => import('./pages/PublicForm'));
+
+// Pretty form links (/f/slug) → hash route.
+if (location.pathname.startsWith('/f/')) location.replace(`/#${location.pathname}${location.search}`);
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -45,6 +49,7 @@ const S = (el: React.ReactNode) => <Suspense fallback={<Loading />}>{el}</Suspen
 const router = createHashRouter([
   { path: '/login', element: <PublicOnly mode="login" /> },
   { path: '/register', element: <PublicOnly mode="register" /> },
+  { path: '/f/:slug', element: S(<PublicForm />) },
   {
     path: '/', element: <Protected />, children: [
       { index: true, element: S(<Dashboard />) },

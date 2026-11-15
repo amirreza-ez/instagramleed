@@ -72,7 +72,7 @@ export const STATUS: Record<string, { label: string; tone: string }> = {
 };
 export const SOURCE: Record<string, string> = {
   MANUAL: 'ثبت دستی', CSV: 'فایل CSV', XLSX: 'فایل اکسل', META_LEAD_ADS: 'Lead Ads متا', INSTAGRAM_COMMENT: 'کامنت اینستاگرام',
-  INSTAGRAM_DM: 'دایرکت اینستاگرام', INSTAGRAM_MENTION: 'منشن اینستاگرام', BUSINESS_DISCOVERY: 'کشف کسب‌وکار', WEBHOOK: 'وب‌هوک / فرم سایت',
+  INSTAGRAM_DM: 'دایرکت اینستاگرام', INSTAGRAM_MENTION: 'منشن اینستاگرام', BUSINESS_DISCOVERY: 'کشف کسب‌وکار', WEBHOOK: 'وب‌هوک / فرم سایت', FORM: 'فرم بیو اینستاگرام',
 };
 export const PRIORITY: Record<string, { label: string; tone: string }> = {
   LOW: { label: 'کم', tone: 'bg-slate-100 text-slate-600 ring-slate-200' },

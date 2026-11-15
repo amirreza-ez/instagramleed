@@ -14,7 +14,7 @@ import type { Request, Response } from 'express';
 import { Integration, IntegrationProvider } from '@prisma/client';
 import crypto from 'node:crypto';
 import { z } from 'zod';
-import { AuditService, AuthCtx, Ctx, decrypt, encrypt, MinRole, parse, PrismaService, Public, randomToken, rl, runInBackground, sha256 } from '../common/core';
+import { AuditService, AuthCtx, Ctx, decrypt, encrypt, MinRole, parse, PrismaService, normPhone, Public, randomToken, rl, runInBackground, sha256 } from '../common/core';
 import { BillingService } from './billing';
 import { JobRunner } from './imports';
 import { ImportsModule } from './imports';
@@ -432,6 +432,41 @@ export class MetaController {
     // Acknowledge fast; process asynchronously (Meta retries on slow/failed responses).
     runInBackground(() => this.meta.handleWebhook(req.body));
     return 'EVENT_RECEIVED';
+  }
+
+  // ---- Public lead form (Instagram bio / story / DM link) ----
+  @Public() @Get('public/forms/:slug')
+  async form(@Param('slug') slug: string) {
+    const org = await this.prisma.organization.findUnique({ where: { slug }, include: { categories: { orderBy: { sortOrder: 'asc' }, select: { id: true, name: true } } } });
+    if (!org || org.suspended) throw new NotFoundException('فرم یافت نشد');
+    return { name: org.name, businessType: org.businessType, city: org.city, instagram: org.instagram, phone: org.phone, categories: org.categories };
+  }
+
+  @Public() @Throttle(rl(10)) @Post('public/forms/:slug')
+  async submitForm(@Param('slug') slug: string, @Body() b: unknown) {
+    const org = await this.prisma.organization.findUnique({ where: { slug } });
+    if (!org || org.suspended) throw new NotFoundException('فرم یافت نشد');
+    const d = parse(z.object({
+      fullName: z.string().trim().min(2, 'نام خود را وارد کنید').max(100),
+      phone: z.string().trim().min(7, 'شماره تماس را وارد کنید').max(30),
+      businessName: z.string().trim().max(120).optional(), city: z.string().trim().max(60).optional(),
+      categoryId: z.string().max(40).optional(), message: z.string().trim().max(1000).optional(),
+      src: z.string().trim().max(40).optional(), website: z.string().optional(),
+      consent: z.boolean().refine((v) => v, 'لطفاً موافقت با تماس را تأیید کنید'),
+    }), b);
+    if (d.website) return { ok: true }; // honeypot: bots fill hidden fields
+    if (!normPhone(d.phone)) throw new BadRequestException({ message: 'شماره تماس معتبر نیست', errors: [{ path: 'phone', message: 'شماره تماس معتبر نیست' }] });
+    const categoryId = d.categoryId && (await this.prisma.category.findFirst({ where: { id: d.categoryId, organizationId: org.id } })) ? d.categoryId : null;
+    const r = await this.leads.upsertLead(org.id, null, {
+      fullName: d.fullName, phone: d.phone, businessName: d.businessName || null, city: d.city || null, categoryId,
+      consent: true, consentSource: `فرم اینستاگرام${d.src ? ` (${d.src})` : ''}`, tags: ['فرم اینستاگرام', ...(d.src ? [d.src] : [])],
+    }, { source: 'FORM', strategy: 'merge' });
+    if (r.lead) {
+      if (d.message) await this.prisma.activity.create({ data: { organizationId: org.id, leadId: r.lead.id, type: 'MESSAGE', content: `پیام از فرم: ${d.message}` } });
+      const owner = await this.prisma.membership.findFirst({ where: { organizationId: org.id, role: { in: ['OWNER', 'ADMIN'] } }, orderBy: { createdAt: 'asc' } });
+      await this.prisma.task.create({ data: { organizationId: org.id, leadId: r.lead.id, assigneeId: owner?.userId, title: `تماس با ${d.fullName} (فرم اینستاگرام)`, dueAt: new Date(), priority: 'HIGH' } });
+    }
+    return { ok: true };
   }
 
   // ---- Generic lead intake (website forms, Zapier/Make, other tools) ----
