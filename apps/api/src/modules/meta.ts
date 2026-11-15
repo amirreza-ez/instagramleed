@@ -14,7 +14,7 @@ import type { Request, Response } from 'express';
 import { Integration, IntegrationProvider } from '@prisma/client';
 import crypto from 'node:crypto';
 import { z } from 'zod';
-import { AuditService, AuthCtx, Ctx, decrypt, encrypt, MinRole, parse, PrismaService, Public, randomToken, rl, sha256 } from '../common/core';
+import { AuditService, AuthCtx, Ctx, decrypt, encrypt, MinRole, parse, PrismaService, Public, randomToken, rl, runInBackground, sha256 } from '../common/core';
 import { BillingService } from './billing';
 import { JobRunner } from './imports';
 import { ImportsModule } from './imports';
@@ -50,7 +50,7 @@ export class MetaService implements OnModuleInit, OnModuleDestroy {
   private timer?: NodeJS.Timeout;
   constructor(private prisma: PrismaService, private leads: LeadsService, private runner: JobRunner, private audit: AuditService, private billing: BillingService) {}
 
-  onModuleInit() { this.timer = setInterval(() => this.maintainTokens().catch((e) => this.log.warn(e.message)), 6 * 3600_000); }
+  onModuleInit() { if (process.env.VERCEL) return; this.timer = setInterval(() => this.maintainTokens().catch((e) => this.log.warn(e.message)), 6 * 3600_000); }
   onModuleDestroy() { clearInterval(this.timer); }
 
   config() {
@@ -430,7 +430,7 @@ export class MetaController {
       throw new ForbiddenException('invalid signature');
     }
     // Acknowledge fast; process asynchronously (Meta retries on slow/failed responses).
-    setImmediate(() => this.meta.handleWebhook(req.body));
+    runInBackground(() => this.meta.handleWebhook(req.body));
     return 'EVENT_RECEIVED';
   }
 

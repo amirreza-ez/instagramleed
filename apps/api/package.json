@@ -23,6 +23,7 @@
     "@nestjs/swagger": "^11.4.7",
     "@nestjs/throttler": "^6.7.1",
     "@prisma/client": "^6.19.3",
+    "@vercel/functions": "^3.11.3",
     "cookie-parser": "^1.4.7",
     "exceljs": "^4.4.0",
     "helmet": "^8.3.0",

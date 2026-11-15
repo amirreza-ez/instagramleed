@@ -1,0 +1,21 @@
+{
+  "installCommand": "pnpm install --no-frozen-lockfile --filter @eazazi/api... --filter @eazazi/web...",
+  "buildCommand": "pnpm -C apps/api exec prisma generate && pnpm -C apps/api build && DATABASE_URL=$DIRECT_URL pnpm -C apps/api exec prisma migrate deploy && pnpm -C apps/web build",
+  "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "{apps/api/dist/**,node_modules/.pnpm/@prisma+client*/node_modules/.prisma/client/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "framework": null,
+  "regions": [
+    "fra1"
+  ]
+}

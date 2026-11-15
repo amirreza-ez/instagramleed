@@ -148,3 +148,9 @@ export const pageSchema = z.object({ page: z.coerce.number().int().min(1).defaul
 
 /** Rate-limit helper: production limits, relaxed only for the automated test suite. */
 export const rl = (limit: number, ttl = 60_000) => ({ default: { limit: process.env.NODE_ENV === 'test' ? limit * 100 : limit, ttl } });
+
+/** Runs work after the response is sent. On Vercel, waitUntil keeps the serverless function alive until it finishes. */
+export function runInBackground(fn: () => Promise<unknown>) {
+  const p = new Promise<void>((resolve) => setImmediate(() => fn().catch(() => undefined).finally(resolve)));
+  if (process.env.VERCEL) { try { require('@vercel/functions').waitUntil(p); } catch { /* not on Vercel */ } }
+}

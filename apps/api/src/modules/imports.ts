@@ -9,7 +9,7 @@ import { Job, LeadSource, Prisma } from '@prisma/client';
 import ExcelJS from 'exceljs';
 import Papa from 'papaparse';
 import { z } from 'zod';
-import { AuditService, AuthCtx, Ctx, MinRole, parse, PrismaService } from '../common/core';
+import { AuditService, AuthCtx, Ctx, MinRole, parse, PrismaService, runInBackground } from '../common/core';
 import { BillingService } from './billing';
 import { DedupeStrategy, filterSchema, LeadsModule, LeadsService } from './leads';
 
@@ -90,11 +90,11 @@ export class JobRunner implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
   async onModuleInit() {
     // Jobs cannot survive a process restart in the in-process runner; mark them honestly.
-    await this.prisma.job.updateMany({ where: { status: 'PROCESSING' }, data: { status: 'FAILED', finishedAt: new Date(), errors: [{ row: 0, message: 'پردازش به دلیل راه‌اندازی مجدد سرور متوقف شد' }] } });
+    await this.prisma.job.updateMany({ where: { status: 'PROCESSING', startedAt: { lt: new Date(Date.now() - 15 * 60_000) } }, data: { status: 'FAILED', finishedAt: new Date(), errors: [{ row: 0, message: 'پردازش به دلیل راه‌اندازی مجدد سرور متوقف شد' }] } });
   }
   isCancelled = async (id: string) => (await this.prisma.job.findUnique({ where: { id }, select: { status: true } }))?.status === 'CANCELLED';
   run(job: Job, work: (job: Job) => Promise<void>) {
-    setImmediate(async () => {
+    runInBackground(async () => {
       try {
         await this.prisma.job.update({ where: { id: job.id }, data: { status: 'PROCESSING', startedAt: new Date() } });
         await work(job);

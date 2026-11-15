@@ -38,7 +38,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 }
 
 const webDist = path.resolve(__dirname, '../../web/dist');
-const serveWeb = process.env.NODE_ENV === 'production' && fs.existsSync(webDist);
+const serveWeb = process.env.NODE_ENV === 'production' && !process.env.VERCEL && fs.existsSync(webDist);
 
 @Module({
   imports: [
