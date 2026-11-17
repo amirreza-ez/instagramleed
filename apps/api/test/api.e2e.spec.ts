@@ -241,3 +241,34 @@ describe('public lead form', () => {
     expect(tasks.body[0].title).toContain('مشتری فرم');
   });
 });
+
+describe('prospecting', () => {
+  it('extracts usernames from messy pasted text', async () => {
+    const { extractUsernames } = await import('../src/modules/prospecting');
+    const t = [
+      'https://www.instagram.com/mobile.shop_1/?hl=fa',
+      'سلام @Accessory_Store و',
+      'https://instagram.com/p/ABC123/',
+      'case.world',
+      'site.com/x',
+      '12345',
+    ].join('\n');
+    expect(extractUsernames(t).sort()).toEqual(['accessory_store', 'case.world', 'mobile.shop_1']);
+  });
+  it('bulk-adds pages, queues them, records outreach, enforces org isolation', async () => {
+    const a = await register('prosp'); const b = await register('prosp2');
+    const r = await request(http).post('/api/prospects/bulk').set(auth(a.token)).send({ text: ['@shop_one', '@shop_two', '@shop_one'].join('\n'), city: 'تهران' }).expect(201);
+    expect([r.body.created, r.body.existing]).toEqual([2, 0]);
+    expect((await request(http).post('/api/prospects/bulk').set(auth(a.token)).send({ text: '@shop_two' })).body.existing).toBe(1);
+    const q = await request(http).get('/api/prospects/queue').set(auth(a.token)).expect(200);
+    expect(q.body.items.length).toBe(2); expect(q.body.sentToday).toBe(0);
+    const id = q.body.items[0].id;
+    await request(http).post(`/api/prospects/${id}/sent`).set(auth(b.token)).send({}).expect(404);
+    await request(http).post(`/api/prospects/${id}/sent`).set(auth(a.token)).send({ templateTitle: 'معرفی' }).expect(201);
+    const q2 = await request(http).get('/api/prospects/queue').set(auth(a.token)).expect(200);
+    expect(q2.body.items.length).toBe(1); expect(q2.body.sentToday).toBe(1);
+    expect((await request(http).get(`/api/leads/${id}`).set(auth(a.token))).body.status).toBe('CONTACTED');
+    const t = await request(http).get('/api/templates').set(auth(a.token)).expect(200);
+    expect(t.body.length).toBe(3);
+  });
+});

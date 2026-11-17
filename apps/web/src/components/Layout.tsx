@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3, Bell, Building2, CalendarCheck2, ChevronDown, CreditCard, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
-  Menu, Radar, Search, Settings, ShieldCheck, Users, X,
+  Menu, Radar, Search, Target, Settings, ShieldCheck, Users, X,
 } from 'lucide-react';
 import { Instagram } from './brand';
 import { ReactNode, useEffect, useRef, useState } from 'react';
@@ -15,6 +15,7 @@ import { Avatar, Badge, cx } from './ui';
 const NAV: { to: string; label: string; icon: ReactNode; min?: string; superAdmin?: boolean }[] = [
   { to: '/', label: 'داشبورد', icon: <LayoutDashboard className="size-[18px]" /> },
   { to: '/leads', label: 'سرنخ‌ها و مشتریان', icon: <Users className="size-[18px]" /> },
+  { to: '/prospecting', label: 'پیج‌یابی و ارتباط', icon: <Target className="size-[18px]" /> },
   { to: '/discovery', label: 'جذب از اینستاگرام', icon: <Radar className="size-[18px]" /> },
   { to: '/imports', label: 'ورود و خروج داده', icon: <FileSpreadsheet className="size-[18px]" /> },
   { to: '/campaigns', label: 'کمپین‌ها', icon: <Megaphone className="size-[18px]" /> },

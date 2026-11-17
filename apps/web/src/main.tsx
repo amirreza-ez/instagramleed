@@ -23,6 +23,7 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 const Billing = lazy(() => import('./pages/Billing'));
 const Admin = lazy(() => import('./pages/Admin'));
 const PublicForm = lazy(() => import('./pages/PublicForm'));
+const Prospecting = lazy(() => import('./pages/Prospecting'));
 
 // Pretty form links (/f/slug) → hash route.
 if (location.pathname.startsWith('/f/')) location.replace(`/#${location.pathname}${location.search}`);
@@ -56,6 +57,7 @@ const router = createHashRouter([
       { path: 'leads', element: S(<Leads />) },
       { path: 'leads/:id', element: S(<LeadDetail />) },
       { path: 'imports', element: S(<Imports />) },
+      { path: 'prospecting', element: S(<Prospecting />) },
       { path: 'discovery', element: S(<Discovery />) },
       { path: 'campaigns', element: S(<Campaigns />) },
       { path: 'tasks', element: S(<Tasks />) },
@@ -81,3 +83,5 @@ initApi().finally(() => {
     </StrictMode>,
   );
 });
+
+if ('serviceWorker' in navigator && import.meta.env.PROD && !window.desktop) navigator.serviceWorker.register('./sw.js').catch(() => undefined);

@@ -36,6 +36,7 @@ enum LeadSource {
   BUSINESS_DISCOVERY
   WEBHOOK
   FORM
+  PROSPECT
 }
 
 enum Priority {
@@ -133,6 +134,7 @@ model Organization {
   subscription  Subscription?
   invoices      Invoice[]
   activities    Activity[]
+  templates     MessageTemplate[]
 }
 
 model User {
@@ -436,4 +438,15 @@ model AuditLog {
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
+}
+
+model MessageTemplate {
+  id             String       @id @default(cuid())
+  organizationId String
+  title          String
+  body           String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }

@@ -17,6 +17,7 @@ import { CrmModule } from './modules/crm';
 import { ImportsModule } from './modules/imports';
 import { LeadsModule } from './modules/leads';
 import { MetaModule } from './modules/meta';
+import { ProspectingModule } from './modules/prospecting';
 
 // BigInt (campaign budgets) → JSON number
 (BigInt.prototype as any).toJSON = function () { return Number(this); };
@@ -46,7 +47,7 @@ const serveWeb = process.env.NODE_ENV === 'production' && !process.env.VERCEL &&
     JwtModule.registerAsync({ global: true, useFactory: () => ({ secret: process.env.JWT_SECRET, signOptions: { issuer: 'eazazi-lead' } }) }),
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
     ...(serveWeb ? [ServeStaticModule.forRoot({ rootPath: webDist, exclude: ['/api/{*path}'] })] : []),
-    AuthModule, BillingModule, LeadsModule, ImportsModule, CrmModule, MetaModule, AdminModule,
+    AuthModule, BillingModule, LeadsModule, ImportsModule, CrmModule, MetaModule, ProspectingModule, AdminModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

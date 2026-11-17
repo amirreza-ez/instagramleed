@@ -1,0 +1,21 @@
+import { expect, test } from '@playwright/test';
+const uniq = Date.now().toString(36);
+test('add target pages, open queue, mark outreach sent', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/#/login');
+  await page.getByLabel('ایمیل').fill(process.env.E2E_EMAIL ?? 'admin@eazazi.ir');
+  await page.getByLabel('رمز عبور').fill(process.env.E2E_PASSWORD ?? 'Eazazi@12345');
+  await page.getByRole('button', { name: 'ورود', exact: true }).click();
+  await page.getByRole('link', { name: 'پیج‌یابی و ارتباط' }).click();
+  await page.getByRole('button', { name: 'پیدا کردن پیج‌ها' }).first().click();
+  await page.getByLabel('لیست پیج‌ها').fill(`https://instagram.com/e2e_a_${uniq}\n@e2e_b_${uniq}`);
+  await page.getByRole('button', { name: /افزودن .*به صف/ }).click();
+  await expect(page.getByText(/پیج جدید به صف اضافه شد/)).toBeVisible();
+  const row = page.locator('li', { hasText: `@e2e_a_${uniq}` });
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: 'ارسال شد' }).click();
+  await expect(page.getByText('ثبت شد؛ پیگیری ۲ روز بعد ساخته شد')).toBeVisible();
+  await expect(page.locator('li', { hasText: `@e2e_a_${uniq}` })).toHaveCount(0);
+  await page.locator('li', { hasText: `@e2e_b_${uniq}` }).getByRole('button', { name: 'نامناسب' }).click();
+  await expect(page.locator('li', { hasText: `@e2e_b_${uniq}` })).toHaveCount(0);
+});

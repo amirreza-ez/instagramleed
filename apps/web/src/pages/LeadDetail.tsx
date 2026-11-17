@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth';
 import { ACTIVITY, faAgo, faDateTime, faDigits, faNum, PRIORITY, SOURCE, STATUS } from '../lib/fa';
 import { useMembers } from '../lib/hooks';
 import { LeadForm } from './LeadForm';
+import { waLink } from './Prospecting';
 
 export function TaskModal({ open, onClose, leadId, task }: { open: boolean; onClose: () => void; leadId?: string; task?: any }) {
   const qc = useQueryClient();
@@ -105,6 +106,8 @@ export default function LeadDetail() {
             <Select aria-label="اولویت" value={l.priority} onChange={(e) => upd.mutate({ priority: e.target.value })} className="w-32">{Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>اولویت {v.label}</option>)}</Select>
             <div className="mr-auto flex flex-wrap gap-2">
               <Button variant="secondary" icon={<CalendarPlus className="size-4" />} onClick={() => setTaskOpen(true)}>پیگیری</Button>
+              {l.phone && <Button variant="secondary" icon={<MessageCircle className="size-4" />} onClick={() => window.open(waLink(l.phone, `سلام ${l.fullName || ''} عزیز`), '_blank')}>واتساپ</Button>}
+              {l.instagramUsername && <Button variant="secondary" icon={<Instagram className="size-4" />} onClick={() => window.open(`https://ig.me/m/${l.instagramUsername}`, '_blank')}>دایرکت</Button>}
               {(cf.igsid || cf.lastCommentId) && <Button variant="secondary" icon={<MessageCircle className="size-4" />} onClick={() => setReply({ open: true, mode: cf.igsid ? 'dm' : 'private_reply', text: '' })}>پاسخ در اینستاگرام</Button>}
               <Button variant="secondary" icon={<Pencil className="size-4" />} onClick={() => setEdit(true)}>ویرایش</Button>
               {can('MANAGER') && <Button variant="ghost" className="text-rose-600" icon={<Trash2 className="size-4" />} onClick={() => setConfirm('delete')}>حذف</Button>}
