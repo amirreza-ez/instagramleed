@@ -37,6 +37,7 @@ async function main() {
   // Owner org gets the enterprise plan.
   const ent = await prisma.plan.findUniqueOrThrow({ where: { code: 'enterprise' } });
   await prisma.subscription.update({ where: { organizationId: org.id }, data: { planId: ent.id, status: 'ACTIVE', trialEndsAt: null, currentPeriodEnd: new Date(Date.now() + 365 * 864e5) } });
+  if (process.env.SEED_SAMPLE_DATA !== 'true') { console.log('[seed] organisation «موبایل اعزازی» created (no sample data)'); return; }
   const cats = new Map((await prisma.category.findMany({ where: { organizationId: org.id } })).map((c) => [c.name, c.id]));
   const camp = await prisma.campaign.create({ data: { organizationId: org.id, name: 'کمپین جذب همکار پاییز', channel: 'INSTAGRAM_ADS', status: 'ACTIVE', budget: 50_000_000n, startDate: new Date(Date.now() - 20 * 864e5) } });
   for (const [i, [fullName, businessName, ig, phone, city, cat, status]] of SAMPLE.entries()) {
